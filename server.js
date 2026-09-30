@@ -13,15 +13,21 @@ const delayReadData=async()=>{
     })
     return await readData()
 }
-
+let cache={}
 async function readData(){
     let data=await fsPromise.readFile(filePath,"utf-8")
     return JSON.parse(data)
 }
 
 app.get("/products",async (req,res)=>{
+    let key=req.url
+    let value=cache[key]
     try {
+        if(value){
+            return res.json(value)
+        }
         let products=await delayReadData()
+        cache[key]=products
         res.send(products)
     }catch(err){    
         res.send(err)
@@ -29,10 +35,16 @@ app.get("/products",async (req,res)=>{
 
 })
 app.get("/products/:id",async (req,res)=>{
+    let key=req.url
+    let value=cache[key]
     try{
         let id=Number(req.params.id)
+        if(value){
+            return res.json(value)
+        }
         let products=await delayReadData()
         let data=products.find(product=>product.id===id)
+        cache[key]=data
         res.json(data)
         
     }catch(err){
